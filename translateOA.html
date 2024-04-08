@@ -1,0 +1,30 @@
+<html>
+    <head>        
+        <title>Test Translation Nodes (OA)</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+        <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+        <script src="./script.js"></script>
+        <link href="./style.css" rel="stylesheet">
+        <script>
+            async function main(){
+                window.inputEvent({
+                    "kind": 5003,
+                    "created_at": Math.floor(Date.now() / 1000),
+                    "tags": [
+                        ["param", "run-on", "openagents/translate"],
+                        ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                        ["param", "source_language", "en"],
+                        ["param", "target_language", "it"],
+                        ["i", `Today we launch OpenAgents, the world's first AI agent swarm capable of recursive daily improvement through crowdsourcing and bitcoin incentives.`]
+                    ],
+                    content: "",
+                });
+            }
+            window.addEventListener('load', main);
+        </script>
+    </head>
+    <body>
+    </body>
+</html>

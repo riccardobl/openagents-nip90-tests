@@ -1,0 +1,34 @@
+<html>
+    <head>        
+        <title>Test Extism Nodes</title>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="robots" content="noindex, nofollow">
+        <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+        <script src="./script.js"></script>
+        <link href="./style.css" rel="stylesheet">
+        <script>
+            async function main(){
+                const zipCodeStackApiKey = "01HTSCQSD5VKRN5N78XD0VAQ98";
+                const zipCode = "33162";
+                window.inputEvent({
+                    "kind": 5003,
+                    "created_at": Math.floor(Date.now() / 1000),
+                    "tags": [
+                        ["param", "run-on", "openagents/extism-runtime"],
+                        ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                        ["param", "main", "https://github.com/riccardobl/openagents-test-meta-plugin/raw/master/meta.wasm"],
+                        ["param", "description", "Get weather data from zip code"],
+                        ["i", `{"apikey":"${zipCodeStackApiKey}","zipcode":"${zipCode}"}`]
+                    ],
+                    content: "",
+                });
+            }
+            window.addEventListener('load', main);
+        </script>
+    </head>
+    <body>
+        <a class="img" href="data/extism.png"><img src="data/extism.png"></a>
+
+    </body>
+</html>
