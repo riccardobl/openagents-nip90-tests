@@ -62,7 +62,7 @@ async function onLoad(){
                 } else if (status && status[1] == "error") {
                     const errorEntryEl = document.createElement('span');
                     errorEntryEl.classList.add('error');
-                    errorEntryEl.innerText = status[2];
+                    errorEntryEl.innerText = status[2]||event.content;
                     logEl.appendChild(errorEntryEl);
                 } else if (status && status[1] == "success") {
                     const filter = {
