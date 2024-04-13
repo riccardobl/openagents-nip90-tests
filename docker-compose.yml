@@ -30,6 +30,14 @@ services:
     networks:
       - openagents-node-network
 
+ transformersjs:
+    image: ghcr.io/riccardobl/openagents-transformersjs:master
+    environment:
+      - POOL_ADDRESS=pool
+      - POOL_PORT=5000
+    networks:
+      - openagents-node-network
+
 networks:
   openagents-node-network:
     driver: bridge

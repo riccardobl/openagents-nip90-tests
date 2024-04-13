@@ -1,0 +1,35 @@
+<html>
+
+<head>
+    <title>Test TransformersJS Nodes (OA)</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+    <script src="./script.js"></script>
+    <link href="./style.css" rel="stylesheet">
+    <script>
+        async function main() {
+            window.inputEvent({
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param", "run-on", "openagents/transformersjs"],
+                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                    ["param", "pipeline", "sentiment-analysis"],
+                    ["param", "model", "Xenova/bert-base-multilingual-uncased-sentiment"],
+                    ["i",JSON.stringify([
+                        "I love coffee!"
+                    ])]
+                ],
+                content: "",
+            });
+        }
+        window.addEventListener('load', main);
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>
