@@ -24,8 +24,8 @@
             return null;
         }
 
-    async function getActionId(template) {
-        const digestBuffer = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(template)));
+    async function getActionId(template, poolId, nodeId) {
+        const digestBuffer = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(template)+poolId+nodeId));
         const digestArray = Array.from(new Uint8Array(digestBuffer));
         const digestHex = digestArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
         return digestHex;
@@ -123,9 +123,9 @@
                         
                         // add action to list if not present
                         //    nb. this part is actually implementation dependent, we use 
-                        //    the sha256 hash of the stringified template here, but it could be
+                        //    the sha256 hash of the stringified-template+poolId+nodeId here, but it could be
                         //    any other unique identifier
-                        let actionId = await getActionId(template);
+                        let actionId = await getActionId(template,poolId,nodeId);
                         if(!ACTIONS.find(action=>action.id===actionId)){
                             ACTIONS.push({
                                 id: actionId,
