@@ -9,9 +9,9 @@
     <link href="./style.css" rel="stylesheet">
     <script>
 
-        const POOLS = [];
-        const NODES = [];
-        const ACTIONS = [];
+        let POOLS = [];
+        let NODES = [];
+        let ACTIONS = [];
 
         function findInTags(tags, key) {
             // find the value of the tag with the given key
@@ -153,6 +153,9 @@
 
 
         async function main() {
+            POOLS = [];
+            NODES = [];
+            ACTIONS = [];
             await discoverEvents();
             document.getElementById("pools").innerText = JSON.stringify(POOLS, null, 2);
             document.getElementById("nodes").innerText = JSON.stringify(NODES, null, 2);
