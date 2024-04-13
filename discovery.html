@@ -57,86 +57,91 @@
 
         
             for(let i = 0; i <nodes.length;i++){
-                let node = nodes[i]; 
+                try{
+                    let node = nodes[i]; 
 
-                let timestamp = node.created_at * 1000; // the timestamp of this announce
-                let poolId = node.pubkey; // the pool that contains the node (also the pub key that is signing the event)
-                let nodeId = findInTags(node.tags,"d");// the unique id of the node in the pool (enforced by the pool)
-                let announcement = JSON.parse(node.content); // the json object containing the node's announcement
-                let nodeName= announcement.name; // the name of the node
-                let nodePicture = announcement.picture; // the picture of the node
-                let nodeDescription = announcement.about; // the description of the node
-                let eventTemplates = announcement.eventTemplates; // the templates for the actions that the node can perform
-                let nodeWeb = announcement.web; // the description of the node
-
-
-
-                // add pool to list if not present and query for the pool's information
-                if(!POOLS.find(pool=>pool.id===poolId)){
-                    // query pool info
-                    let poolProbeRequest = {
-                        kinds: [0],
-                        authors: [poolId],
-                        since: Math.floor(since / 1000), // in seconds
-                        limit:1
-                    };
-                    console.log("Probe pool", poolProbeRequest)
-                    let poolDataEvents = await pool.querySync(relays, poolProbeRequest);
-                    let poolData = poolDataEvents.length>0?JSON.parse(poolDataEvents[0].content):{};
-                    let poolName = poolData.name || "";
-                    let poolDescription = poolData.about || "";
-                    let poolPicture = poolData.picture || "";
-                    let poolWeb = poolData.web || "";
-                    POOLS.push({
-                        id: poolId,
-                        name: poolName,
-                        description: poolDescription,
-                        picture: poolPicture,
-                        web: poolWeb
-                    });
-                }
+                    let timestamp = node.created_at * 1000; // the timestamp of this announce
+                    let poolId = node.pubkey; // the pool that contains the node (also the pub key that is signing the event)
+                    let nodeId = findInTags(node.tags,"d");// the unique id of the node in the pool (enforced by the pool)
+                    let announcement = JSON.parse(node.content); // the json object containing the node's announcement
+                    let nodeName= announcement.name; // the name of the node
+                    let nodePicture = announcement.picture; // the picture of the node
+                    let nodeDescription = announcement.about; // the description of the node
+                    let eventTemplates = announcement.eventTemplates; // the templates for the actions that the node can perform
+                    let nodeWeb = announcement.web; // the description of the node
 
 
 
-                // add node to list if not present
-                if(!NODES.find(node=>node.id===nodeId)){
-                    NODES.push({
-                        id: nodeId,
-                        pool: poolId,
-                        name: nodeName,
-                        description: nodeDescription,
-                        picture: nodePicture,
-                        web: nodeWeb
-                    });
-                }
-
-                for(let j=0;j<eventTemplates.length;j++){
-                    let template = eventTemplates[j];
-
-                    let actionName = findInTags(template.tags, "name") || "";
-                    let actionDescription = findInTags(template.tags, "about") || ""; 
-                    let actionTos = findInTags(template.tags, "tos") || "";
-                    let actionPrivacyPolicy = findInTags(template.tags, "privacy") || "";
-                    let actionAuthor = findInTags(template.tags, "author") || "";
-                    let actionLink = findInTags(template.tags, "web") || "";
-                    
-                    // add action to list if not present
-                    //    nb. this part is actually implementation dependent, we use 
-                    //    the sha256 hash of the stringified template here, but it could be
-                    //    any other unique identifier
-                    let actionId = await getActionId(template);
-                    if(!ACTIONS.find(action=>action.id===actionId)){
-                        ACTIONS.push({
-                            id: actionId,
-                            node: nodeId,
-                            name: actionName,
-                            about: actionDescription,
-                            tos: actionTos,
-                            privacy: actionPrivacyPolicy,
-                            web: actionLink,
-                            template: template
+                    // add pool to list if not present and query for the pool's information
+                    if(!POOLS.find(pool=>pool.id===poolId)){
+                        // query pool info
+                        let poolProbeRequest = {
+                            kinds: [0],
+                            authors: [poolId],
+                            since: Math.floor(since / 1000), // in seconds
+                            limit:1
+                        };
+                        console.log("Probe pool", poolProbeRequest)
+                        let poolDataEvents = await pool.querySync(relays, poolProbeRequest);
+                        let poolData = poolDataEvents.length>0?JSON.parse(poolDataEvents[0].content):{};
+                        let poolName = poolData.name || "";
+                        let poolDescription = poolData.about || "";
+                        let poolPicture = poolData.picture || "";
+                        let poolWeb = poolData.web || "";
+                        POOLS.push({
+                            id: poolId,
+                            name: poolName,
+                            description: poolDescription,
+                            picture: poolPicture,
+                            web: poolWeb
                         });
-                    }                    
+                    }
+
+
+
+                    // add node to list if not present
+                    if(!NODES.find(node=>node.id===nodeId)){
+                        NODES.push({
+                            id: nodeId,
+                            pool: poolId,
+                            name: nodeName,
+                            description: nodeDescription,
+                            picture: nodePicture,
+                            web: nodeWeb
+                        });
+                    }
+
+                    for(let j=0;j<eventTemplates.length;j++){
+                        let template = eventTemplates[j];
+
+                        let actionName = findInTags(template.tags, "name") || "";
+                        let actionDescription = findInTags(template.tags, "about") || ""; 
+                        let actionTos = findInTags(template.tags, "tos") || "";
+                        let actionPrivacyPolicy = findInTags(template.tags, "privacy") || "";
+                        let actionAuthor = findInTags(template.tags, "author") || "";
+                        let actionLink = findInTags(template.tags, "web") || "";
+                        
+                        // add action to list if not present
+                        //    nb. this part is actually implementation dependent, we use 
+                        //    the sha256 hash of the stringified template here, but it could be
+                        //    any other unique identifier
+                        let actionId = await getActionId(template);
+                        if(!ACTIONS.find(action=>action.id===actionId)){
+                            ACTIONS.push({
+                                id: actionId,
+                                node: nodeId,
+                                pool: poolId,
+                                name: actionName,
+                                about: actionDescription,
+                                tos: actionTos,
+                                privacy: actionPrivacyPolicy,
+                                web: actionLink,
+                                template: template
+                            });
+                        }                    
+                    }
+                }catch(e){
+                    console.error("Error parsing node",e);
                 }
             }
 
