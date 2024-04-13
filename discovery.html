@@ -125,7 +125,8 @@
                         //    nb. this part is actually implementation dependent, we use 
                         //    the sha256 hash of the stringified-template+poolId+nodeId here, but it could be
                         //    any other unique identifier
-                        let actionId = await getActionId(template,poolId,nodeId);
+                        let deduplicateActions = document.getElementById("actionsdedup").checked;
+                        let actionId = await getActionId(template,!deduplicateActions?poolId:"",!deduplicateActions?nodeId:"");
                         if(!ACTIONS.find(action=>action.id===actionId)){
                             ACTIONS.push({
                                 id: actionId,
@@ -163,6 +164,9 @@
 
 <body>
     <h1>Actions Discovery</h1>
+    <div>
+    <input type="checkbox" id="actionsdedup"    checked> <label for="actionsdedup">Deduplicate Actions</label>
+    </div>
     <button onclick="main()">Probe</button>
     <h2>Pools</h2>
     <pre id="pools">
