@@ -1,6 +1,6 @@
 services:
-  grpc:
-    image: ghcr.io/riccardobl/openagents-grpc:master
+  pool:
+    image: ghcr.io/riccardobl/openagents-pool:master
     networks:
       - openagents-node-network
 
@@ -16,16 +16,17 @@ services:
     runtime: nvidia
     environment:
       - NVIDIA_VISIBLE_DEVICES=0
-      - NOSTR_CONNECT_GRPC_BINDING_ADDRESS=grpc
-      - NOSTR_CONNECT_GRPC_BINDING_PORT=5000
+      - POOL_ADDRESS=pool
+      - POOL_PORT=5000
       - DEVICE=0
     networks:
       - openagents-node-network
+
   extism-runtime:
     image: ghcr.io/riccardobl/openagents-extism-runtime-node:master
     environment:
-      - NOSTR_CONNECT_GRPC_BINDING_ADDRESS=grpc
-      - NOSTR_CONNECT_GRPC_BINDING_PORT=5000
+      - POOL_ADDRESS=pool
+      - POOL_PORT=5000
     networks:
       - openagents-node-network
 
