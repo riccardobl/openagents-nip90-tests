@@ -1,0 +1,45 @@
+<html>
+
+<head>
+    <title>Test Embeddings Generator (OA)</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+    <script src="./script.js"></script>
+    <link href="./style.css" rel="stylesheet">
+    <script>
+        async function main() {
+            const useHp = document.getElementById('hp');
+
+            window.inputEvent({
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param","run-on", "openagents/embeddings" ],                             
+                    ["param", "max-tokens", "512"],
+                    ["param", "overlap", "128"],
+                    ["param", "quantize", "true"],
+                    ["output", useHp.checked ? "application/hyperblob" : "application/json"],                    
+                    ["i","What is the color of the fox?","text","","query"],
+                    ["i","Where does the hobbit live?","text","","query"],
+                    ["i","The quick brown fox jumps over the lazy dog.","text","","passage"],
+                    ["i","The color of the sky is blue","text","","passage"],
+                    ["i", "In a hole in the ground there lived a hobbit.", "text", "", "passage"],
+                    ["i", "It was a bright cold day in April, and the clocks were striking thirteen.", "text", "", "passage"],
+                    ["expiration", ""+Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content":""
+        
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Embeddings test</h1>
+    <span><label for="hp">Use hyperblob</label><input type="checkbox" id="hp" name="hp" value="true"></span>
+    <button onclick="main()">Load event</button>
+</body>
+
+</html>

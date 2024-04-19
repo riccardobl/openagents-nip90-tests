@@ -74,6 +74,9 @@ async function onLoad(){
                     const result = await pool.querySync(relays, filter);
                     const content = result[0].content;
                     outputEl.innerText = content;
+                    if(window.onJobResult){
+                        window.onJobResult(content);
+                    }
                 }
             }
         }

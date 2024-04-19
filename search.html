@@ -1,0 +1,51 @@
+<html>
+
+<head>
+    <title>Similarity Search</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+    <script src="./script.js"></script>
+    <link href="./style.css" rel="stylesheet">
+    <script>
+        async function main() {
+            window.inputEvent({
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param", "run-on", "openagents/search"],
+                    ["param", "k", "4"],
+                    ["param", "normalize", "true"],                    
+                    [
+                        "i", 
+                        JSON.stringify(
+                            [["What is the color of the fox?", "2Mg+dnsrvFRyRGluYM0sWiVbPoJphgGJbDtUS+/I6eLydOLF9xL07WpUtgY43TI56u5fqFwIrWG6DqB+nROwyrRKIaIu3hTboXRmEsF80fHfWqcb3BYZOgIcExZB00Vp", "int8", [96]]
+                        ]),
+                        "text",
+                        "",
+                        "query"
+                    ],
+                    [
+                        "i",
+                        JSON.stringify(
+                            [["The quick brown fox jumps over the lazy dog.", "+Fi5NnprsHSyFnFXaOk4WiVLLiFppoGtfDt2Wy/Mzfv45eNF91r062hVtgQJ7TId6OoZoFcLqXV6LIB+nTeoCrbKqfMK2hfKoWRcGsF8UfPf2KRRlC4ZP4JdG7Yh00Vo", "int8", [96]], ["The color of the sky is blue", "2kwqNntL6E2BQjlkaomizAFLPvN5h4GPPDtUSu3A6emyKORF/0r058s1ogY57DIfyq9fqvcJTQTyDah3nRuwziJKKSJu3pHLo2ROE8V90fPeUuYTnGTZOkAYGxYJU0VZ", "int8", [96]], ["In a hole in the ground there lived a hobbit.", "WF06NPNrvFUCR3P2aIkqzghJJmF5hoGJfDFUW6/E6arYYuRl/0r058vVtAYJ/DIv6q5/u+crb/Gq77h23R6gzrAIabMO1r7bo2VuE8VsmfPe0qcTnCbZmgI8WxYBUyRZ", "int8", [96]], ["It was a bright cold day in April, and the clocks were striking thirteen.", "2FkqFjLjpVUCBjHnYI0iCgUzPrF5hoGfXLF0Wy+M6ary4OTF/1r0484VtUY45TYfevrfvPMZCwXqrag2nRuxmrLIKfAu3xfbpWR6A0V9WXOcUuZRmKQZu0IcOxcBcxVJ", "int8", [96]]]
+                        ),
+                        "text",
+                        "",
+                        "index"
+                    ],
+                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content": ""
+
+            });
+        }
+        window.addEventListener('load', main);
+    </script>
+</head>
+
+<body>
+</body>
+
+</html>

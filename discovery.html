@@ -24,20 +24,20 @@
             return null;
         }
 
-    async function getActionId(template, poolId, nodeId) {
-        const digestBuffer = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(template)+poolId+nodeId));
-        const digestArray = Array.from(new Uint8Array(digestBuffer));
-        const digestHex = digestArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
-        return digestHex;
-    }
+        async function getActionId(template, sockets, meta, poolId, nodeId) {
+            const digestBuffer = await window.crypto.subtle.digest("SHA-256", new TextEncoder().encode(JSON.stringify(template) + JSON.stringify(sockets) + JSON.stringify(meta) + poolId + nodeId));
+            const digestArray = Array.from(new Uint8Array(digestBuffer));
+            const digestHex = digestArray.map(byte => byte.toString(16).padStart(2, '0')).join('');
+            return digestHex;
+        }
 
-        async function discoverEvents (
-            filterByKinds=[], 
-            filterByPools=[],
-            filterByNodes=[],
-            since= Date.now() - 1000 * 60 * 30, // return only announcements in the last 30 minutes
-        ){
-            
+        async function discoverEvents(
+            filterByKinds = [],
+            filterByPools = [],
+            filterByNodes = [],
+            since = Date.now() - 1000 * 60 * 30, // return only announcements in the last 30 minutes
+        ) {
+
             let relays = ["wss://nostr.rblb.it:7777"];
             let pool = new window.NostrTools.SimplePool()
 
@@ -55,35 +55,35 @@
             let nodes = await pool.querySync(relays, nodeProbeRequest);
             console.log("Found nodes", nodes);
 
-        
-            for(let i = 0; i <nodes.length;i++){
-                try{
-                    let node = nodes[i]; 
+
+            for (let i = 0; i < nodes.length; i++) {
+                try {
+                    let node = nodes[i];
 
                     let timestamp = node.created_at * 1000; // the timestamp of this announce
                     let poolId = node.pubkey; // the pool that contains the node (also the pub key that is signing the event)
-                    let nodeId = findInTags(node.tags,"d");// the unique id of the node in the pool (enforced by the pool)
+                    let nodeId = findInTags(node.tags, "d");// the unique id of the node in the pool (enforced by the pool)
                     let announcement = JSON.parse(node.content); // the json object containing the node's announcement
-                    let nodeName= announcement.name; // the name of the node
+                    let nodeName = announcement.name; // the name of the node
                     let nodePicture = announcement.picture; // the picture of the node
                     let nodeDescription = announcement.about; // the description of the node
-                    let eventTemplates = announcement.eventTemplates; // the templates for the actions that the node can perform
+                    let tools = announcement.tools; // the tools that the node supports
                     let nodeWeb = announcement.web; // the description of the node
 
 
 
                     // add pool to list if not present and query for the pool's information
-                    if(!POOLS.find(pool=>pool.id===poolId)){
+                    if (!POOLS.find(pool => pool.id === poolId)) {
                         // query pool info
                         let poolProbeRequest = {
                             kinds: [0],
                             authors: [poolId],
                             since: Math.floor(since / 1000), // in seconds
-                            limit:1
+                            limit: 1
                         };
                         console.log("Probe pool", poolProbeRequest)
                         let poolDataEvents = await pool.querySync(relays, poolProbeRequest);
-                        let poolData = poolDataEvents.length>0?JSON.parse(poolDataEvents[0].content):{};
+                        let poolData = poolDataEvents.length > 0 ? JSON.parse(poolDataEvents[0].content) : {};
                         let poolName = poolData.name || "";
                         let poolDescription = poolData.about || "";
                         let poolPicture = poolData.picture || "";
@@ -100,7 +100,7 @@
 
 
                     // add node to list if not present
-                    if(!NODES.find(node=>node.id===nodeId)){
+                    if (!NODES.find(node => node.id === nodeId)) {
                         NODES.push({
                             id: nodeId,
                             pool: poolId,
@@ -111,23 +111,26 @@
                         });
                     }
 
-                    for(let j=0;j<eventTemplates.length;j++){
-                        let template = eventTemplates[j];
+                    for (let j = 0; j < tools.length; j++) {
+                        let template = tools[j].template;
+                        let sockets = tools[j].sockets;
+                        let meta = tools[j].meta;
 
-                        let actionName = findInTags(template.tags, "name") || "";
-                        let actionDescription = findInTags(template.tags, "about") || ""; 
-                        let actionTos = findInTags(template.tags, "tos") || "";
-                        let actionPrivacyPolicy = findInTags(template.tags, "privacy") || "";
-                        let actionAuthor = findInTags(template.tags, "author") || "";
-                        let actionLink = findInTags(template.tags, "web") || "";
-                        
+                        let actionName = meta.name;
+                        let actionDescription = meta.about;
+                        let actionTos = meta.tos;
+                        let actionPrivacyPolicy = meta.privacy;
+                        let actionAuthor = meta.author;
+                        let actionLink = meta.web;
+                        let actionTags = meta.tags; // used for filtering and search
+
                         // add action to list if not present
                         //    nb. this part is actually implementation dependent, we use 
-                        //    the sha256 hash of the stringified-template+poolId+nodeId here, but it could be
+                        //    the sha256 hash of the stringified-template+meta+sockets+poolId+nodeId here, but it could be
                         //    any other unique identifier
                         let deduplicateActions = document.getElementById("actionsdedup").checked;
-                        let actionId = await getActionId(template,!deduplicateActions?poolId:"",!deduplicateActions?nodeId:"");
-                        if(!ACTIONS.find(action=>action.id===actionId)){
+                        let actionId = await getActionId(template, sockets, meta, !deduplicateActions ? poolId : "", !deduplicateActions ? nodeId : "");
+                        if (!ACTIONS.find(action => action.id === actionId)) {
                             ACTIONS.push({
                                 id: actionId,
                                 node: nodeId,
@@ -137,16 +140,19 @@
                                 tos: actionTos,
                                 privacy: actionPrivacyPolicy,
                                 web: actionLink,
-                                template: template
+                                tags: actionTags,
+                                template: template,
+                                sockets: sockets,
+                                meta: meta
                             });
-                        }                    
+                        }
                     }
-                }catch(e){
-                    console.error("Error parsing node",e);
+                } catch (e) {
+                    console.error("Error parsing node", e);
                 }
             }
 
-         
+
 
 
         }
@@ -168,7 +174,7 @@
 <body>
     <h1>Actions Discovery</h1>
     <div>
-    <input type="checkbox" id="actionsdedup"    checked> <label for="actionsdedup">Deduplicate Actions</label>
+        <input type="checkbox" id="actionsdedup" checked> <label for="actionsdedup">Deduplicate Actions</label>
     </div>
     <button onclick="main()">Probe</button>
     <h2>Pools</h2>

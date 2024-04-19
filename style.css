@@ -13,10 +13,15 @@ body {
     text-align: left;
     display: flex;
     flex-direction: column;
+    justify-content: start;
 }
 
 textarea {
     min-height: 600px;
+}
+
+textarea.small{
+    min-height: 100px;
 }
 
 .img,

@@ -1,0 +1,177 @@
+<html>
+
+<head>
+    <title>Event Template Filling</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+    <link href="./style.css" rel="stylesheet">
+    <script type="module">
+        import Mustache from 'https://cdnjs.cloudflare.com/ajax/libs/mustache.js/4.2.0/mustache.js';
+
+
+
+        function connectInputSockets( schema, out, keepDefault=true) {
+            for(const [k,v] of Object.entries(schema)){
+                out[k]=v.value;
+                
+                if(keepDefault&& out[k]){
+                    continue; // skip if has default
+                }
+                if(v.type==="number"){
+                    out[k] =Number(prompt(v.name+"\n"+v.description));   
+                }else if(v.type==="string"){
+                    out[k] = prompt(v.name+"\n"+v.description);
+                }else if(v.type==="array"){
+                    out[k]=[];
+                    while(true){
+                        const schema=v.schema;
+                        const entry={};
+                        connectInputSockets(schema,entry);
+                        out[k].push(entry); 
+                        if (!confirm("Do you want to add another entry?")) {
+                            break;
+                        }
+                    }                   
+                }else if(v.type==="object"){
+                    out[k]={};
+                    connectInputSockets(v.schema,out[k]);
+                }
+            }
+
+        }
+
+        async function main() {
+            const template = document.getElementById("template").value;
+            const sockets = JSON.parse(document.getElementById("sockets").value);
+            const meta = JSON.parse(document.getElementById("meta").value);
+
+            console.log("Extract params");
+            const params={
+                sys:{
+                    timestamp_seconds:Math.floor(Date.now() / 1000),                     
+                    expiration_timestamp_seconds :Math.floor((Date.now() + 1000 * 60 * 2) / 1000),                     
+                },
+                in:{
+
+                },
+                out:{
+
+                },
+                meta:meta
+            };
+            connectInputSockets(sockets.in, params.in);            
+            console.log(params);
+            document.getElementById("params").innerText=JSON.stringify(params,null,2);
+
+
+            console.log("Fill template")
+            const event=Mustache.render(template,params);
+            console.log(event);
+            document.getElementById("event").innerText=event;
+            
+        
+            
+        }
+        window.main=main;
+    </script>
+</head>
+
+<body>
+    <h1>Event Template Filling</h1>
+    
+    <h2>Template</h2>
+    <textarea id="template">
+{
+    "kind": 5003,
+    "created_at": {{sys.timestamp_seconds}},
+    "tags": [
+        ["param","run-on", "openagents/embeddings" ],                              
+        ["name", "{{meta.name}}"],       
+        ["param", "max-tokens", "{{in.max_tokens}}"],
+        ["param", "overlap", "{{in.overlap}}"],
+        {{#in.documents}}
+        ["i", "{{data}}", "{{data_type}}", "", "{{marker}}"],
+        {{/in.documents}}
+        ["expiration", {{sys.expiration_timestamp_seconds}}],
+        ["t", "tool"],
+    ]
+}
+    </textarea>
+    <h2>Meta</h2>
+    <textarea id="meta">
+{
+    "name": "Embedding Generator Action",
+    "about": "Generate embeddings from input text and queries",
+    "tos": "",
+    "privacy": "",
+    "author": "",
+    "web": "",
+    "picture": ""
+
+}
+    </textarea>
+
+    <h2>Sockets</h2>
+    <textarea id="sockets">
+{
+    "in": {
+        "max_tokens": {
+            "type": "number",
+            "value": 50,
+            "description": "The maximum number of tokens for each text chunk",
+            "name": "Max Tokens"
+        },
+        "overlap": {
+            "type": "number",
+            "description": "The number of tokens to overlap between each chunk",
+            "name": "Overlap"
+        },
+        "documents": {
+            "type": "array",
+            "description": "The documents to generate embeddings from",
+            "name": "Documents",
+            "schema": {
+                "data": {
+                    "type": "string",
+                    "description": "The data to generate embeddings from",
+                    "name": "Data"
+                },
+                "data_type": {
+                    "type": "string",
+                    "value": "text",
+                    "description": "The type of the data",
+                    "name": "Data Type"
+                },
+                "marker": {
+                    "type": "string",
+                    "description": "'query' if it is a query or 'passage' if it is a passage",
+                    "name": "Marker"
+                }
+            }
+        }
+    },
+    "out": {
+        "output": {
+            "type": "application/json",
+            "description": "The embeddings generated from the input data",
+            "name": "Embeddings"
+        }
+    }
+}
+    </textarea>
+    <button onclick="main()">Generate Event</button>
+    <h2>Filled params</h2>
+    <pre id="params">
+
+    </pre>
+    <h2>Event</h2>
+    <pre id="event">
+
+    </pre>
+
+</body>
+
+</html>

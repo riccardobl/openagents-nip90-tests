@@ -1,0 +1,160 @@
+<html>
+
+<head>
+    <title>Test Embeddings Generator (OA)</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+    <link href="./style.css" rel="stylesheet">
+    <script>
+
+        async function runJobAndWait(eventReq, logsEl) {
+            // Initialize nostr if not already done
+            if (!window.nostrPool) {
+                window.nostrPool = new window.NostrTools.SimplePool();
+                window.nostrRelays = ["wss://nostr.rblb.it:7777"];
+                window.nostrPrivateKey = window.NostrTools.generateSecretKey();
+                window.nostrPool.subscribeMany(window.nostrRelays, [
+                    {
+                        kinds: [7000]
+                    }
+                ], {
+                    onevent: async (event) => {
+                        if (event.kind == 7000) {
+                            const etag = event.tags.find(t => t[0] == "e");
+                            if (!window.jobId || etag[1] != window.jobId) {
+                                return;
+                            }
+                            const status = event.tags.find(t => t[0] == "status");
+                            if (status && status[1] == "log") {
+                                logsEl.innerText += "\n" + event.content;
+                            } else if (status && status[1] == "error") {
+                                logsEl.innerText += "\n!!! Error: " + event.content;
+                                window.jobPromise.reject(event.content);
+                            } else if (status && status[1] == "success") {
+                                const filter = {
+                                    kinds: [6003],
+                                    "#e": [window.jobId],
+                                    limit: 1
+                                };
+                                console.log("\n\nRemote done. Find results using filter: " + JSON.stringify(filter, null, 2));
+                                const result = await this.nostrPool.querySync(this.nostrRelays, filter);
+                                const content = result[0].content;
+                                logsEl.innerText += "\n\nReceived content: " + JSON.stringify(content, null, 2);
+                                window.jobPromise.resolve(content);
+                                window.jobId = null;
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Send job and wait
+            const event = window.NostrTools.finalizeEvent(eventReq, window.nostrPrivateKey);
+            console.log("Send job", event);
+            window.jobId = event.id;
+            return new Promise((resolve, reject) => {
+                window.jobPromise = { resolve, reject };
+                window.nostrPool.publish(window.nostrRelays, event);
+            });
+        }
+
+
+        async function main() {
+
+            const logsEl=document.getElementById('logs');
+
+            const inputDocs = [];
+            const inputQueries = [];
+            const docsEls = document.querySelectorAll('.doc');
+            for (const docEl of docsEls) {
+                const v = docEl.value.trim();
+                if (v) inputDocs.push(v);
+            }
+
+            const queryEls = document.querySelectorAll('.query');
+            for (const queryEl of queryEls) {
+                const v = queryEl.value.trim();
+                if (v) inputQueries.push(v);
+            }
+
+
+            const embedDocsEventReq = {
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param", "run-on", "openagents/embeddings"],
+                    ["param", "max-tokens", "512"],
+                    ["param", "overlap", "128"],
+                    ["param", "quantize", "false"],
+                    ["output", "application/hyperblob"],
+                    ...inputDocs.map((doc) => ["i", doc, "text", "", "passage"]),
+                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content": ""
+            };
+
+            const embedQueriesEventReq = {
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param", "run-on", "openagents/embeddings"],
+                    ["param", "max-tokens", "512"],
+                    ["param", "overlap", "128"],
+                    ["param", "quantize", "false"],
+                    ["output", "application/hyperblob"],
+                    ...inputDocs.map((doc) => ["i", doc, "text", "", "query"]),
+                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content": ""
+            };
+
+            const docsEmbedHyperUrl=await runJobAndWait(embedDocsEventReq, logsEl);
+            const queriesEmbedHyperUrl=await runJobAndWait(embedQueriesEventReq, logsEl);
+
+            const searchEventReq={
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param", "run-on", "openagents/search"],
+                    ["param", "k", "4"],
+                    ["param", "normalize", "true"],
+                    ["i", queriesEmbedHyperUrl, "application/hyperblob","","query"],
+                    ["i", docsEmbedHyperUrl, "application/hyperblob", "", "index"],
+                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content": ""
+            };
+
+            const foundContext = await runJobAndWait(searchEventReq, logsEl);
+            logsEl.innerText += "\n\nOUTPUT\n"+JSON.stringify(foundContext, null, 2);
+
+
+
+
+        }
+    </script>
+</head>
+
+<body>
+    <div id="warning">
+            <h1>Warning</h1>
+            This is a demo page, event encryption is currently not implemented.
+            <br>
+            Every data you submit here is posted on a public Nostr relay and can be read by anyone!
+    </div>
+    <h2>Documents</h2>
+    <textarea class="doc small">The quick brown fox jumps over the lazy dog.</textarea>
+    <textarea  class="doc small">The color of the sky is blue</textarea  >
+    <textarea  class="doc small">In a hole in the ground there lived a hobbit.</textarea >
+    <textarea  class="doc small">It was a bright cold day in April, and the clocks were striking thirteen.</textarea>
+
+    <h2>Question</h2>
+    <textarea  class="query small">What is the color of the fox?</textarea>
+    <textarea class="query small"></textarea>
+    <button onclick="main()">Run!</button>
+    <pre id="logs"></pre>
+</body>
+
+</html>
