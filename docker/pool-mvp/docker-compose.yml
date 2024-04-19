@@ -1,0 +1,73 @@
+# curl https://gist.githubusercontent.com/riccardobl/118e428d9464fe6007f2c705b3346910/raw/7fa5901bcb2bce7ab060b776924c441b12542a22/download-config.sh | bash
+services:
+
+
+
+  openagents-nostr-relay:
+    image: ghcr.io/hoytech/strfry:latest
+    restart: always
+    volumes:
+      - /srv/openagents/nostr-relay/strfry.conf:/etc/strfry.conf
+      - /srv/openagents/nostr-relay/data:/app/strfry-db
+    networks:
+      - openagents-mvp-network
+    ports:
+      - "2053:7777"
+
+
+  openagents-pool:
+    image: ghcr.io/riccardobl/openagents-pool:master
+    restart: always
+    networks:
+      - openagents-mvp-network
+    environment:
+      - BLOB_STORAGE_PATH=/blobs
+      - NOSTR_RELAYS=wss://nostr.rblb.it:7777,wss://oa-test.frk.wf:2053
+    volumes:
+      - /srv/openagents/pool/blobs:/blobs
+    ports:
+      - "2083:5000"
+      - "2087:5001"
+      - "2096:5002"
+
+  openagents-extism-runtime:
+    image: ghcr.io/riccardobl/openagents-extism-runtime-node:master
+    restart: always
+    environment:
+      - POOL_ADDRESS=openagents-pool
+      - POOL_PORT=5000
+      - SECRETS_PROVIDERS=/secrets/secrets.json
+    volumes:
+      -  /srv/openagents/extism-runtime/secrets:/secrets
+    networks:
+      - openagents-mvp-network
+
+  openagents-search:
+    image: ghcr.io/riccardobl/openagents-search:master
+    restart: always
+    environment:
+      - POOL_ADDRESS=openagents-pool
+      - POOL_PORT=5000
+      - CACHE_PATH=/cache
+    volumes:
+      - /srv/openagents/search/cache:/cache
+    networks:
+      - openagents-mvp-network
+
+    
+  openagents-embeddings:
+    image: ghcr.io/riccardobl/openagents-embeddings:master
+    restart: always
+    environment:
+      - POOL_ADDRESS=openagents-pool
+      - POOL_PORT=5000
+      - CACHE_PATH=/cache
+      - TRANSFORMERS_DEVICE=-1
+    volumes:
+      - /srv/openagents/embeddings/cache:/cache
+    networks:
+      - openagents-mvp-network
+
+networks:
+  openagents-mvp-network:
+    driver: bridge

@@ -30,7 +30,7 @@ async function onLoad(){
 
 
     const pool = new window.NostrTools.SimplePool();
-    let relays = ["wss://nostr.rblb.it:7777"];
+    let relays = window.nostrRelays;
 
 
     window.inputEvent=(ev)=>{

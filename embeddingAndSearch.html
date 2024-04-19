@@ -5,6 +5,8 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
+        <script src="./relays.js"></script>
+
     <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
     <link href="./style.css" rel="stylesheet">
     <script>
@@ -13,7 +15,6 @@
             // Initialize nostr if not already done
             if (!window.nostrPool) {
                 window.nostrPool = new window.NostrTools.SimplePool();
-                window.nostrRelays = ["wss://nostr.rblb.it:7777"];
                 window.nostrPrivateKey = window.NostrTools.generateSecretKey();
                 window.nostrPool.subscribeMany(window.nostrRelays, [
                     {
@@ -104,7 +105,7 @@
                     ["param", "overlap", "128"],
                     ["param", "quantize", "false"],
                     ["output", "application/hyperblob"],
-                    ...inputDocs.map((doc) => ["i", doc, "text", "", "query"]),
+                    ...inputQueries.map((doc) => ["i", doc, "text", "", "query"]),
                     ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
                 ],
                 "content": ""

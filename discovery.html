@@ -5,6 +5,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="robots" content="noindex, nofollow">
+    <script src="./relays.js"></script>
     <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
     <link href="./style.css" rel="stylesheet">
     <script>
@@ -38,7 +39,7 @@
             since = Date.now() - 1000 * 60 * 30, // return only announcements in the last 30 minutes
         ) {
 
-            let relays = ["wss://nostr.rblb.it:7777"];
+            let relays = window.nostrRelays;
             let pool = new window.NostrTools.SimplePool()
 
 
