@@ -1,0 +1,40 @@
+<html>
+
+<head>
+    <title>Test Embeddings Generator (OA)</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+        <script src="./relays.js"></script>
+
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+    <script src="./script.js"></script>
+    <link href="./style.css" rel="stylesheet">
+    <script>
+        async function main() {
+            const useHp = document.getElementById('hp');
+
+            window.inputEvent({
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param","run-on", "openagents/document-retrieval" ],                            
+                    ["output", useHp.checked ? "application/hyperblob" : "application/json"],                    
+                    ["i","https://nostr.com/the-protocol/events","text","",""],
+                    ["i","https://bitcoin.org/bitcoin.pdf","text","",""],                    
+                    ["expiration", ""+Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content":""
+        
+            });
+        }
+    </script>
+</head>
+
+<body>
+    <h1>Fetch test</h1>
+    <span><label for="hp">Use hyperblob</label><input type="checkbox" id="hp" name="hp" value="true"></span>
+    <button onclick="main()">Load event</button>
+</body>
+
+</html>

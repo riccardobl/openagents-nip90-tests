@@ -1,0 +1,173 @@
+<html>
+
+<head>
+    <title>Test Embeddings Generator (OA)</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+        <script src="./relays.js"></script>
+
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+    <link href="./style.css" rel="stylesheet">
+    <script>
+
+        async function runJobAndWait(eventReq, logsEl) {
+            // Initialize nostr if not already done
+            if (!window.nostrPool) {
+                window.nostrPool = new window.NostrTools.SimplePool();
+                window.nostrPrivateKey = window.NostrTools.generateSecretKey();
+                window.nostrPool.subscribeMany(window.nostrRelays, [
+                    {
+                        kinds: [7000]
+                    }
+                ], {
+                    onevent: async (event) => {
+                        if (event.kind == 7000) {
+                            const etag = event.tags.find(t => t[0] == "e");
+                            if (!window.jobId || etag[1] != window.jobId) {
+                                return;
+                            }
+                            const status = event.tags.find(t => t[0] == "status");
+                            if (status && status[1] == "log") {
+                                logsEl.innerText += "\n" + event.content;
+                            } else if (status && status[1] == "error") {
+                                logsEl.innerText += "\n!!! Error: " + event.content;
+                                window.jobPromise.reject(event.content);
+                            } else if (status && status[1] == "success") {
+                                const filter = {
+                                    kinds: [6003],
+                                    "#e": [window.jobId],
+                                    limit: 1
+                                };
+                                console.log("\n\nRemote done. Find results using filter: " + JSON.stringify(filter, null, 2));
+                                const result = await this.nostrPool.querySync(this.nostrRelays, filter);
+                                const content = result[0].content;
+                                logsEl.innerText += "\n\nReceived content: " + JSON.stringify(content, null, 2);
+                                window.jobPromise.resolve(content);
+                                window.jobId = null;
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Send job and wait
+            const event = window.NostrTools.finalizeEvent(eventReq, window.nostrPrivateKey);
+            console.log("Send job", event);
+            window.jobId = event.id;
+            return new Promise((resolve, reject) => {
+                window.jobPromise = { resolve, reject };
+                window.nostrPool.publish(window.nostrRelays, event);
+            });
+        }
+
+
+        async function main() {
+
+            const logsEl=document.getElementById('logs');
+
+            const inputUrls = [];
+            const inputQueries = [];
+            const docsEls = document.querySelectorAll('.doc');
+            for (const docEl of docsEls) {
+                const v = docEl.value.trim();
+                if (v) inputUrls.push(v);
+            }
+
+            const queryEls = document.querySelectorAll('.query');
+            for (const queryEl of queryEls) {
+                const v = queryEl.value.trim();
+                if (v) inputQueries.push(v);
+            }
+
+            const inputDocs = await runJobAndWait({
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param", "run-on", "openagents/document-retrieval"],
+                    ["output", "application/hyperblob"],
+                    ...inputUrls.map((doc) => ["i", doc, "text", "", ""]),
+                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content": ""
+            } , logsEl);
+
+
+
+            const docsEmbedding = await runJobAndWait({
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param", "run-on", "openagents/embeddings"],
+                    ["param", "max-tokens", "512"],
+                    ["param", "overlap", "128"],
+                    ["param", "quantize", "false"],
+                    ["output", "application/hyperblob"],
+                    ["i", inputDocs, "application/hyperblob", "", "passage"],
+                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content": ""
+            });
+
+
+            const queryEmbedding = await runJobAndWait({
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param", "run-on", "openagents/embeddings"],
+                    ["param", "max-tokens", "512"],
+                    ["param", "overlap", "128"],
+                    ["param", "quantize", "false"],
+                    ["output", "application/hyperblob"],
+                    ...inputQueries.map((doc) => ["i", doc, "text", "", "query"]),
+                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content": ""
+            });
+
+            
+            const searchResults = await runJobAndWait({
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param", "run-on", "openagents/search"],
+                    ["param", "k", "1"],
+                    ["param", "normalize", "true"],
+                    ["i", queryEmbedding, "application/hyperblob","","query"],
+                    ["i", docsEmbedding, "application/hyperblob", "", "index"],
+                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content": ""
+            });
+
+            
+            document.getElementById('output').innerText = JSON.parse(searchResults)[0].value;
+        
+
+        }
+    </script>
+</head>
+
+<body>
+    <div id="warning">
+            <h1>Warning</h1>
+            This is a demo page, event encryption is currently not implemented.
+            <br>
+            Every data you submit here is posted on a public Nostr relay and can be read by anyone!
+    </div>
+    <h2>Documents</h2>
+    <textarea class="doc small">https://nostr.com/get-started</textarea>
+    <textarea  class="doc small">https://en.wikipedia.org/wiki/Bitcoin</textarea  >
+    <textarea  class="doc small">https://bitcoin.org/bitcoin.pdf</textarea >
+
+    <h2>Question</h2>
+    <textarea  class="query small">When was Bitcoin invented?</textarea>
+    <textarea class="query small"></textarea>
+    <button onclick="main()">Run!</button>
+    <h2>Output</h2>
+    <pre id="output"></pre>
+    <h2>Logs</h2>
+    <pre id="logs"></pre>
+</body>
+
+</html>
