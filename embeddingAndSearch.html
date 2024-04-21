@@ -81,7 +81,7 @@
             }
 
 
-            const embeddingsEventReq = {
+            const embeddingQueriesEventReq = {
                 "kind": 5003,
                 "created_at": Math.floor(Date.now() / 1000),
                 "tags": [
@@ -89,8 +89,7 @@
                     ["param", "max-tokens", "512"],
                     ["param", "overlap", "128"],
                     ["param", "quantize", "false"],
-                    ["output", "application/hyperblob"],
-                    ...inputDocs.map((doc) => ["i", doc, "text", "", "passage"]),
+                    ["output", "application/hyperdrive+bundle"],
                     ...inputQueries.map((doc) => ["i", doc, "text", "", "query"]),
                     ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
                 ],
@@ -98,7 +97,25 @@
             };
 
 
-            const embeddingsHyperUrl=await runJobAndWait(embeddingsEventReq, logsEl);
+            const embeddingQueriesUrl=await runJobAndWait(embeddingQueriesEventReq, logsEl);
+
+            const embeddingDocsEventReq = {
+                "kind": 5003,
+                "created_at": Math.floor(Date.now() / 1000),
+                "tags": [
+                    ["param", "run-on", "openagents/embeddings"],
+                    ["param", "max-tokens", "512"],
+                    ["param", "overlap", "128"],
+                    ["param", "quantize", "false"],
+                    ["output", "application/hyperdrive+bundle"],
+                    ...inputDocs.map((doc) => ["i", doc, "text", "", "passage"]),
+                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
+                ],
+                "content": ""
+            };
+
+            const embeddingDocsUrl=await runJobAndWait(embeddingDocsEventReq, logsEl);
+
 
             const searchEventReq={
                 "kind": 5003,
@@ -107,7 +124,8 @@
                     ["param", "run-on", "openagents/search"],
                     ["param", "k", "4"],
                     ["param", "normalize", "true"],
-                    ["i", embeddingsHyperUrl, "application/hyperblob","",""],
+                    ["i", embeddingQueriesUrl, "application/hyperdrive+bundle", "", "query"],
+                    ["i", embeddingDocsUrl, "application/hyperdrive+bundle", "", "index"],
                     ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
                 ],
                 "content": ""
