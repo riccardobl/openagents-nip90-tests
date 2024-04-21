@@ -1,25 +1,11 @@
 # curl https://gist.githubusercontent.com/riccardobl/118e428d9464fe6007f2c705b3346910/raw/7fa5901bcb2bce7ab060b776924c441b12542a22/download-config.sh | bash
 services:
 
-
-
-  openagents-nostr-relay:
-    image: ghcr.io/hoytech/strfry:latest
-    restart: always
-    volumes:
-      - /srv/openagents/nostr-relay/strfry.conf:/etc/strfry.conf
-      - /srv/openagents/nostr-relay/data:/app/strfry-db
-    networks:
-      - openagents-mvp-network
-    ports:
-      - "2053:7777"
-
-
   openagents-pool:
     image: ghcr.io/riccardobl/openagents-pool:master
     restart: always
     networks:
-      - openagents-mvp-network
+      - openagents-rblb-network
     environment:
       - BLOB_STORAGE_PATH=/blobs
       - NOSTR_RELAYS=wss://nostr.rblb.it:7777
@@ -40,7 +26,8 @@ services:
     volumes:
       -  /srv/openagents/extism-runtime/secrets:/secrets
     networks:
-      - openagents-mvp-network
+      - openagents-rblb-network
+    
 
   openagents-search:
     image: ghcr.io/riccardobl/openagents-search:master
@@ -52,23 +39,28 @@ services:
     volumes:
       - /srv/openagents/search/cache:/cache
     networks:
-      - openagents-mvp-network
+      - openagents-rblb-network
 
     
   openagents-embeddings:
-    image: ghcr.io/riccardobl/openagents-embeddings:master
+    image: ghcr.io/riccardobl/openagents-embeddings:master-cuda
     restart: always
     environment:
       - POOL_ADDRESS=openagents-pool
       - POOL_PORT=5000
       - CACHE_PATH=/cache
       - TRANSFORMERS_DEVICE=-1
-      - MODEL=nlpcloud:paraphrase-multilingual-mpnet-base-v2
-      - OPENAI_API_KEY=${OPENAI_API_KEY}
     volumes:
       - /srv/openagents/embeddings/cache:/cache
     networks:
-      - openagents-mvp-network
+      - openagents-rblb-network
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
 
   openagents-retrieval:
     image: ghcr.io/riccardobl/openagents-document-retrieval:master
@@ -81,8 +73,27 @@ services:
     volumes:
       - /srv/openagents/retrieval/cache:/cache
     networks:
-      - openagents-mvp-network
+      - openagents-rblb-network
+
+  openagents-translate:
+    image: ghcr.io/riccardobl/openagents-translate:master-cuda
+    deploy:
+      resources:
+        reservations:
+          devices:
+          - driver: nvidia
+            count: 1
+            capabilities: [gpu]
+    runtime: nvidia
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=0
+      - POOL_ADDRESS=pool
+      - POOL_PORT=5000
+      - TRANSFORMERS_DEVICE=0
+    networks:
+      - openagents-rblb-network
+
 
 networks:
-  openagents-mvp-network:
+  openagents-rblb-network:
     driver: bridge

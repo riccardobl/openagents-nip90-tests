@@ -32,7 +32,7 @@
                                 logsEl.innerText += "\n" + event.content;
                             } else if (status && status[1] == "error") {
                                 logsEl.innerText += "\n!!! Error: " + event.content;
-                                window.jobPromise.reject(event.content);
+                                // window.jobPromise.reject(event.content);
                             } else if (status && status[1] == "success") {
                                 const filter = {
                                     kinds: [6003],
@@ -118,7 +118,7 @@
                     ["param", "max-tokens", "512"],
                     ["param", "overlap", "128"],
                     ["param", "quantize", "false"],
-                    ["output", "application/hyperblob"],
+                    ["output", "application/json"],
                     ...inputQueries.map((doc) => ["i", doc, "text", "", "query"]),
                     ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
                 ],
@@ -133,7 +133,7 @@
                     ["param", "run-on", "openagents/search"],
                     ["param", "k", "1"],
                     ["param", "normalize", "true"],
-                    ["i", queryEmbedding, "application/hyperblob","","query"],
+                    ["i", queryEmbedding, "application/json","","query"],
                     ["i", docsEmbedding, "application/hyperblob", "", "index"],
                     ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
                 ],

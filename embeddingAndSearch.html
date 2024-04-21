@@ -81,7 +81,7 @@
             }
 
 
-            const embedDocsEventReq = {
+            const embeddingsEventReq = {
                 "kind": 5003,
                 "created_at": Math.floor(Date.now() / 1000),
                 "tags": [
@@ -91,28 +91,14 @@
                     ["param", "quantize", "false"],
                     ["output", "application/hyperblob"],
                     ...inputDocs.map((doc) => ["i", doc, "text", "", "passage"]),
-                    ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
-                ],
-                "content": ""
-            };
-
-            const embedQueriesEventReq = {
-                "kind": 5003,
-                "created_at": Math.floor(Date.now() / 1000),
-                "tags": [
-                    ["param", "run-on", "openagents/embeddings"],
-                    ["param", "max-tokens", "512"],
-                    ["param", "overlap", "128"],
-                    ["param", "quantize", "false"],
-                    ["output", "application/hyperblob"],
                     ...inputQueries.map((doc) => ["i", doc, "text", "", "query"]),
                     ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
                 ],
                 "content": ""
             };
 
-            const docsEmbedHyperUrl=await runJobAndWait(embedDocsEventReq, logsEl);
-            const queriesEmbedHyperUrl=await runJobAndWait(embedQueriesEventReq, logsEl);
+
+            const embeddingsHyperUrl=await runJobAndWait(embeddingsEventReq, logsEl);
 
             const searchEventReq={
                 "kind": 5003,
@@ -121,8 +107,7 @@
                     ["param", "run-on", "openagents/search"],
                     ["param", "k", "4"],
                     ["param", "normalize", "true"],
-                    ["i", queriesEmbedHyperUrl, "application/hyperblob","","query"],
-                    ["i", docsEmbedHyperUrl, "application/hyperblob", "", "index"],
+                    ["i", embeddingsHyperUrl, "application/hyperblob","",""],
                     ["expiration", "" + Math.floor((Date.now() + 1000 * 60 * 2) / 1000)],
                 ],
                 "content": ""
