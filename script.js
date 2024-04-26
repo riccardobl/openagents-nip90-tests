@@ -87,6 +87,7 @@ async function onLoad(){
             let event = JSON.parse(eventTextAreaEl.value);
             event = window.NostrTools.finalizeEvent(event, userPrivateKey);
             window.jobId = event.id;
+            console.log("Send event",event);
             pool.publish(relays, event);
             const logEntryEl = document.createElement('span');
             logEntryEl.innerText = "Event submitted... waiting ...";
