@@ -1,0 +1,57 @@
+<html>
+
+<head>
+    <title>OpenAgents Config Generator</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+    <link href="./style.css" rel="stylesheet">
+    <script>
+
+        function generatePoolConfig(){
+            let config = "";
+            const secretKey =  window.NostrTools.generateSecretKey();
+            const secretHex = Array.from(new Uint8Array(secretKey))
+                .map(byte => byte.toString(16).padStart(2, '0'))
+                .join('');
+            const publicKey = window.NostrTools.getPublicKey(secretKey);
+            config += `export POOL_NOSTR_SECRET_KEY="${secretHex}"\n`;
+            config += `export POOL_NOSTR_PUBLIC_KEY="${publicKey}"\n`;
+
+            const outEl= document.getElementById("poolConfig");
+            outEl.innerText = config;
+        }
+
+        function generateNodeConfig() {
+            let config = "";
+
+            let nodeName = document.getElementById("nodeName").value;
+            nodeName= nodeName.replace("-","_").toUpperCase();
+
+            const secretKey = window.NostrTools.generateSecretKey();
+            const secretHex = Array.from(new Uint8Array(secretKey))
+                .map(byte => byte.toString(16).padStart(2, '0'))
+                .join('');
+            config += `export ${nodeName}_NODE_TOKEN="${secretHex}"\n`;
+
+            const outEl = document.getElementById("nodeConfig");
+            outEl.innerText = config;
+        }
+
+
+    </script>
+</head>
+
+<body>
+    <h1>Config Generation</h1>
+    <h2>Pool</h2>
+    <pre id="poolConfig"></pre>
+    <button onclick="generatePoolConfig()">Generate Pool Config</button>
+    <h2>Node</h2>
+    <div><label>Node name: </label><span>openagents/<input value="embeddings" type="text" id="nodeName"></span>
+    <pre id="nodeConfig"></pre>
+    <button onclick="generateNodeConfig()">Generate Node Config</button>
+</body>
+
+</html>
