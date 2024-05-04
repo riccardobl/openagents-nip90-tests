@@ -1,0 +1,33 @@
+<html>
+
+<head>
+    <title>Nostr PubKey derivation</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="robots" content="noindex, nofollow">
+    <script src="https://unpkg.com/nostr-tools/lib/nostr.bundle.js"></script>
+    <link href="./style.css" rel="stylesheet">
+    <script>
+
+        function derivePubKey(){
+            const privKeyHex = document.getElementById("privKey").value;
+            const pubKey =  window.NostrTools.getPublicKey(privKeyHex);
+            document.getElementById("pubKey").innerText = pubKey;
+        }
+
+    
+
+
+    </script>
+</head>
+
+<body>
+    <h1>Config Generation</h1>
+    <h2>Privkey</h2>
+    <input type="text" id="privKey">
+    <button onclick="derivePubKey()">Submit</button>
+    <h2>Pubkey</h2>
+    <pre id="pubKey"></pre>
+</body>
+
+</html>
